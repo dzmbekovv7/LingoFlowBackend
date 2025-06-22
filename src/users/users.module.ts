@@ -4,12 +4,16 @@ import { UsersController } from './users.controller';
 import { User, UserSchema } from './schemas/users.schema';
 import { MongooseModule } from '@nestjs/mongoose';
 import { JwtModule } from '@nestjs/jwt';
+import { PendingUser, PendingUserSchema } from './schemas/pending-user.schema';
 
 @Module({
   imports: [
-    MongooseModule.forFeature([{ name: User.name, schema: UserSchema }]),
+MongooseModule.forFeature([
+  { name: User.name, schema: UserSchema },
+  { name: PendingUser.name, schema: PendingUserSchema }, // 👈 добавляем эту строку
+]),
     JwtModule.register({
-      secret: process.env.SECRET, 
+      secret: 'secret', 
       signOptions: { expiresIn: '7d' },
     }),
   ],

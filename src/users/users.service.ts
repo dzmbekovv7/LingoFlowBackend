@@ -7,64 +7,98 @@ import { User, UserDocument } from './schemas/users.schema';
 import { CreateUserDto } from './dto/create-user.dto';
 import { UpdateUserDto } from './dto/update-user.dto';
 import { JwtService } from '@nestjs/jwt';
+import { PendingUser, PendingUserDocument } from './schemas/pending-user.schema';
 
 @Injectable()
 export class UsersService {
 constructor(
   private mailerService: MailerService,
   @InjectModel(User.name) private userModel: Model<UserDocument>,
-  private jwtService: JwtService, 
+  @InjectModel(PendingUser.name) private pendingUserModel: Model<PendingUserDocument>,
+  private jwtService: JwtService,
 ) {}
 
   private codes = new Map<string, string>();
   private tempUsers = new Map<string, Omit<CreateUserDto, 'confirmPassword'>>();
 
-  async register(dto: CreateUserDto) {
-    const { email, password, confirmPassword, name } = dto;
+ async register(dto: CreateUserDto) {
+  const { email, password, confirmPassword, name } = dto;
 
-    const exists = await this.userModel.findOne({ email });
-    if (exists) throw new BadRequestException('Email already registered');
+  const exists = await this.userModel.findOne({ email });
+  const pendingExists = await this.pendingUserModel.findOne({ email });
 
-    if (password !== confirmPassword) {
-      throw new BadRequestException('Passwords do not match');
-    }
-
-    const code = Math.floor(100000 + Math.random() * 900000).toString();
-    this.codes.set(email, code);
-    this.tempUsers.set(email, { email, password, name }); 
-
-    await this.mailerService.sendMail({
-      to: email,
-      subject: 'Your confirmation code',
-      text: `Your code is: ${code}`,
-    });
-
-    return { message: 'Code sent to email' };
+  if (exists || pendingExists) {
+    throw new BadRequestException('Email already registered or awaiting confirmation');
   }
+
+  if (password !== confirmPassword) {
+    throw new BadRequestException('Passwords do not match');
+  }
+
+  const code = Math.floor(100000 + Math.random() * 900000).toString();
+
+  const pendingUser = new this.pendingUserModel({
+    email,
+    password,
+    name,
+    code,
+  });
+
+  await pendingUser.save();
+
+  await this.mailerService.sendMail({
+    to: email,
+    subject: 'Your confirmation code',
+    text: `Your code is: ${code}`,
+  });
+
+  return { message: 'Code sent to email' };
+}
+
+async login(email: string, password: string){
+  const user = await this.userModel.findOne({email})
+
+  if(!user){
+    throw new BadRequestException("User not found")
+  }
+
+  if (user.password != password){
+    throw new BadRequestException("Incorrect password or email")
+  }
+
+  const payload = { sub: user._id, email: user.email, name:user.name}
+  const token = this.jwtService.sign(payload)
+
+  return { message: "Login successful", token};
+}
 
 async confirmCode(email: string, code: string) {
-  const savedCode = this.codes.get(email);
-  const tempUser = this.tempUsers.get(email);
+  const pendingUser = await this.pendingUserModel.findOne({ email });
 
-  if (!savedCode || savedCode !== code || !tempUser) {
+  if (!pendingUser || pendingUser.code !== code) {
     throw new BadRequestException('Invalid code or email');
   }
-  
+
   const user = new this.userModel({
-    ...tempUser,
+    email: pendingUser.email,
+    password: pendingUser.password,
+    name: pendingUser.name,
     isVerified: true,
   });
 
   await user.save();
+  await this.pendingUserModel.deleteOne({ email });
 
-  this.codes.delete(email);
-  this.tempUsers.delete(email);
-
-  const payload = { sub: user._id, email: user.email };
+  const payload = {
+    sub: user._id,
+    email: user.email,
+    name: user.name, 
+  };
   const token = this.jwtService.sign(payload);
 
   return { message: 'User verified', token };
 }
+
 
 
   async findAll() {

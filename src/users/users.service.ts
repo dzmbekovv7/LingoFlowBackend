@@ -6,13 +6,15 @@ import { Model } from 'mongoose';
 import { User, UserDocument } from './schemas/users.schema';
 import { CreateUserDto } from './dto/create-user.dto';
 import { UpdateUserDto } from './dto/update-user.dto';
+import { JwtService } from '@nestjs/jwt';
 
 @Injectable()
 export class UsersService {
-  constructor(
-    private mailerService: MailerService,
-    @InjectModel(User.name) private userModel: Model<UserDocument>,
-  ) {}
+constructor(
+  private mailerService: MailerService,
+  @InjectModel(User.name) private userModel: Model<UserDocument>,
+  private jwtService: JwtService, 
+) {}
 
   private codes = new Map<string, string>();
   private tempUsers = new Map<string, Omit<CreateUserDto, 'confirmPassword'>>();
@@ -29,7 +31,7 @@ export class UsersService {
 
     const code = Math.floor(100000 + Math.random() * 900000).toString();
     this.codes.set(email, code);
-    this.tempUsers.set(email, { email, password, name }); // сохраняем временно
+    this.tempUsers.set(email, { email, password, name }); 
 
     await this.mailerService.sendMail({
       to: email,
@@ -40,27 +42,30 @@ export class UsersService {
     return { message: 'Code sent to email' };
   }
 
-  async confirmCode(email: string, code: string) {
-    const savedCode = this.codes.get(email);
-    const tempUser = this.tempUsers.get(email);
+async confirmCode(email: string, code: string) {
+  const savedCode = this.codes.get(email);
+  const tempUser = this.tempUsers.get(email);
 
-    if (!savedCode || savedCode !== code || !tempUser) {
-      throw new BadRequestException('Invalid code or email');
-    }
-
-    const user = new this.userModel({
-      ...tempUser,
-      isVerified: true,
-    });
-
-    await user.save();
-
-    // очищаем временные данные
-    this.codes.delete(email);
-    this.tempUsers.delete(email);
-
-    return { message: 'User verified and created' };
+  if (!savedCode || savedCode !== code || !tempUser) {
+    throw new BadRequestException('Invalid code or email');
   }
+  
+  const user = new this.userModel({
+    ...tempUser,
+    isVerified: true,
+  });
+
+  await user.save();
+
+  this.codes.delete(email);
+  this.tempUsers.delete(email);
+
+  const payload = { sub: user._id, email: user.email };
+  const token = this.jwtService.sign(payload);
+
+  return { message: 'User verified', token };
+}
+
 
   async findAll() {
     return this.userModel.find().exec();

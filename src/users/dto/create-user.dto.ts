@@ -5,10 +5,6 @@ export class CreateUserDto {
   @IsNotEmpty()
   readonly email: string;
 
-  @IsString()
-  @IsNotEmpty()
-  readonly name: string;
-
   @MinLength(6)
   @IsNotEmpty()
   readonly password: string;
@@ -16,4 +12,9 @@ export class CreateUserDto {
   @MinLength(6)
   @IsNotEmpty()
   readonly confirmPassword: string;
+  
+  @IsString()
+  @IsNotEmpty()
+  readonly name: string;
+
 }

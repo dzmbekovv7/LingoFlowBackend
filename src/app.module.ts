@@ -5,6 +5,8 @@ import { UsersModule } from './users/users.module';
 import { MailerModule } from '@nestjs-modules/mailer';
 import { ConfigModule, ConfigService } from '@nestjs/config';
 import { MongooseModule } from '@nestjs/mongoose';
+import { LanguagesController } from './languages/languages.controller';
+import { LanguagesModule } from './languages/languages.module';
 
 @Module({
   imports: [
@@ -33,8 +35,10 @@ import { MongooseModule } from '@nestjs/mongoose';
     }),
 
     UsersModule,
+
+    LanguagesModule,
   ],
-  controllers: [AppController],
+  controllers: [AppController, LanguagesController],
   providers: [AppService],
 })
 export class AppModule {}

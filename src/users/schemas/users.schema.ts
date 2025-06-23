@@ -17,6 +17,22 @@ export class User {
 
   @Prop({ default: false })
   isVerified: boolean;
+
+  @Prop()
+  nativeLanguage?: string;
+
+  @Prop({ type: [String], default: [] })
+  targetLanguage?: string[];
+
+  @Prop()
+  level?: string;
+
+  @Prop()
+  goals?: string;
+
+  @Prop({ type: [String], default: [] })
+  interests?: string[];
 }
+
 
 export const UserSchema = SchemaFactory.createForClass(User);

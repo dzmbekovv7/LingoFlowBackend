@@ -8,6 +8,7 @@ import { CreateUserDto } from './dto/create-user.dto';
 import { UpdateUserDto } from './dto/update-user.dto';
 import { JwtService } from '@nestjs/jwt';
 import { PendingUser, PendingUserDocument } from './schemas/pending-user.schema';
+import { Language, LanguageDocument } from './schemas/language.schema';
 
 @Injectable()
 export class UsersService {
@@ -15,6 +16,8 @@ constructor(
   private mailerService: MailerService,
   @InjectModel(User.name) private userModel: Model<UserDocument>,
   @InjectModel(PendingUser.name) private pendingUserModel: Model<PendingUserDocument>,
+  @InjectModel(Language.name) private languageModel: Model<LanguageDocument>,
+
   private jwtService: JwtService,
 ) {}
 
@@ -66,7 +69,15 @@ async login(email: string, password: string){
     throw new BadRequestException("Incorrect password or email")
   }
 
-  const payload = { sub: user._id, email: user.email, name:user.name}
+  const payload = { 
+    sub: user._id,
+     email: user.email,
+      name:user.name, 
+    nativeLanguage: user.nativeLanguage,
+    targetLanguage: user.targetLanguage,
+    level: user.level,
+    goals: user.goals,
+    interests: user.interests}
   const token = this.jwtService.sign(payload)
 
   return { message: "Login successful", token};
@@ -93,10 +104,45 @@ async confirmCode(email: string, code: string) {
     sub: user._id,
     email: user.email,
     name: user.name, 
+    nativeLanguage: user.nativeLanguage,
+    targetLanguage: user.targetLanguage,
+    level: user.level,
+    goals: user.goals,
+    interests: user.interests
   };
   const token = this.jwtService.sign(payload);
 
   return { message: 'User verified', token };
+}
+
+async submitProfileDetails(userId: string, dto: UpdateUserDto) {
+  const user = await this.userModel.findById(userId);
+  if (!user) throw new BadRequestException('User not found');
+
+  const activeLanguages = await this.languageModel.find({ isActive: true }).lean();
+  const validLanguageNames = activeLanguages.map(lang => lang.name);
+
+  if (dto.nativeLanguage && !validLanguageNames.includes(dto.nativeLanguage)) {
+    throw new BadRequestException(`Invalid native language: ${dto.nativeLanguage}`);
+  }
+
+  if (dto.targetLanguage) {
+    for (const lang of dto.targetLanguage) {
+      if (!validLanguageNames.includes(lang)) {
+        throw new BadRequestException(`Invalid target language: ${lang}`);
+      }
+    }
+  }
+
+  user.nativeLanguage = dto.nativeLanguage;
+  user.targetLanguage = dto.targetLanguage;
+  user.level = dto.level;
+  user.goals = dto.goals;
+  user.interests = dto.interests;
+
+  await user.save();
+
+  return { message: 'Profile updated successfully', user };
 }
 
 

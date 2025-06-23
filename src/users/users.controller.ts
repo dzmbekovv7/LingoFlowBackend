@@ -3,15 +3,33 @@ import { Controller, Post, Body, Get, Param, Patch, Delete } from '@nestjs/commo
 import { UsersService } from './users.service';
 import { CreateUserDto } from './dto/create-user.dto';
 import { UpdateUserDto } from './dto/update-user.dto';
+import { User, UserDocument } from './schemas/users.schema';
+import { InjectModel } from '@nestjs/mongoose';
+import { Model } from 'mongoose';
 
 @Controller('users')
 export class UsersController {
-  constructor(private readonly usersService: UsersService) {}
+  constructor(
+    private readonly usersService: UsersService,
+  @InjectModel(User.name) private userModel: Model<UserDocument>
+  ) {}
 
   @Post('register')
   register(@Body() dto: CreateUserDto) {
     return this.usersService.register(dto);
   }
+@Patch('profile/:id')
+updateProfile(@Param('id') id: string, @Body() dto: UpdateUserDto) {
+  return this.usersService.submitProfileDetails(id, dto);
+}
+@Get('profile/:id')
+async getProfile(@Param('id') id: string) {
+  const user = await this.userModel.findById(id).lean();
+  if (!user){
+    console.log('not found')
+  }
+  return user;
+}
 
   @Post('login')
   login(@Body() body: {email:string,password:string}){

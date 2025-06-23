@@ -1,0 +1,11 @@
+[
+  { "name": "English", "isActive": true },
+  { "name": "Russian", "isActive": true },
+  { "name": "Spanish", "isActive": true },
+  { "name": "German", "isActive": true },
+  { "name": "Chinese", "isActive": true },
+  { "name": "Japanese", "isActive": true },
+  { "name": "Arabic", "isActive": true },
+  { "name": "Portuguese", "isActive": true },
+  { "name": "Korean", "isActive": true }
+]

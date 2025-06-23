@@ -5,12 +5,14 @@ import { User, UserSchema } from './schemas/users.schema';
 import { MongooseModule } from '@nestjs/mongoose';
 import { JwtModule } from '@nestjs/jwt';
 import { PendingUser, PendingUserSchema } from './schemas/pending-user.schema';
+import { Language, LanguageSchema } from './schemas/language.schema'; // <- импорт
 
 @Module({
   imports: [
 MongooseModule.forFeature([
   { name: User.name, schema: UserSchema },
-  { name: PendingUser.name, schema: PendingUserSchema }, // 👈 добавляем эту строку
+  { name: PendingUser.name, schema: PendingUserSchema },
+        { name: Language.name, schema: LanguageSchema },    // <- добавь сюда
 ]),
     JwtModule.register({
       secret: 'secret', 

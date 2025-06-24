@@ -1,7 +1,7 @@
 import { Controller, Get } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
 import { Model } from 'mongoose';
-import { Language, LanguageDocument } from '../users/schemas/language.schema';
+import { Language, LanguageDocument } from '../schemas/language.schema';
 
 @Controller('languages')
 export class LanguagesController {

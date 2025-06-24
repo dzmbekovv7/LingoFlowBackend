@@ -1,11 +1,11 @@
 import { Module } from '@nestjs/common';
 import { UsersService } from './users.service';
 import { UsersController } from './users.controller';
-import { User, UserSchema } from './schemas/users.schema';
+import { User, UserSchema } from '../schemas/users.schema';
 import { MongooseModule } from '@nestjs/mongoose';
 import { JwtModule } from '@nestjs/jwt';
-import { PendingUser, PendingUserSchema } from './schemas/pending-user.schema';
-import { Language, LanguageSchema } from './schemas/language.schema'; // <- импорт
+import { PendingUser, PendingUserSchema } from '../schemas/pending-user.schema';
+import { Language, LanguageSchema } from '../schemas/language.schema'; // <- импорт
 
 @Module({
   imports: [

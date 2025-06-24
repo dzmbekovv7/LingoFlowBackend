@@ -3,12 +3,12 @@ import { Injectable, BadRequestException } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
 import { MailerService } from '@nestjs-modules/mailer';
 import { Model } from 'mongoose';
-import { User, UserDocument } from './schemas/users.schema';
+import { User, UserDocument } from '../schemas/users.schema';
 import { CreateUserDto } from './dto/create-user.dto';
 import { UpdateUserDto } from './dto/update-user.dto';
 import { JwtService } from '@nestjs/jwt';
-import { PendingUser, PendingUserDocument } from './schemas/pending-user.schema';
-import { Language, LanguageDocument } from './schemas/language.schema';
+import { PendingUser, PendingUserDocument } from '../schemas/pending-user.schema';
+import { Language, LanguageDocument } from '../schemas/language.schema';
 
 @Injectable()
 export class UsersService {
@@ -20,10 +20,6 @@ constructor(
 
   private jwtService: JwtService,
 ) {}
-
-  private codes = new Map<string, string>();
-  private tempUsers = new Map<string, Omit<CreateUserDto, 'confirmPassword'>>();
-
  async register(dto: CreateUserDto) {
   const { email, password, confirmPassword, name } = dto;
 
@@ -58,29 +54,36 @@ constructor(
   return { message: 'Code sent to email' };
 }
 
-async login(email: string, password: string){
-  const user = await this.userModel.findOne({email})
+async login(email: string, password: string) {
+  const user: UserDocument | null = await this.userModel.findOne({ email });
 
-  if(!user){
-    throw new BadRequestException("User not found")
+  if (!user) {
+    throw new BadRequestException("User not found");
   }
 
-  if (user.password != password){
-    throw new BadRequestException("Incorrect password or email")
+  if (user.password !== password) {
+    throw new BadRequestException("Incorrect password or email");
   }
 
   const payload = { 
-    sub: user._id,
-     email: user.email,
-      name:user.name, 
+    sub: user._id,  // Types.ObjectId
+    email: user.email,
+    name: user.name,
     nativeLanguage: user.nativeLanguage,
     targetLanguage: user.targetLanguage,
     level: user.level,
     goals: user.goals,
-    interests: user.interests}
-  const token = this.jwtService.sign(payload)
+    interests: user.interests,
+  };
 
-  return { message: "Login successful", token};
+  const token = this.jwtService.sign(payload);
+  const userId = payload.sub
+  console.log(userId)
+  return {
+    message: "Login successful",
+    token,
+    userId
+  };
 }
 
 async confirmCode(email: string, code: string) {
@@ -144,7 +147,6 @@ async submitProfileDetails(userId: string, dto: UpdateUserDto) {
 
   return { message: 'Profile updated successfully', user };
 }
-
 
 
   async findAll() {

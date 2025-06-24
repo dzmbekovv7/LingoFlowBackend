@@ -7,6 +7,8 @@ import { ConfigModule, ConfigService } from '@nestjs/config';
 import { MongooseModule } from '@nestjs/mongoose';
 import { LanguagesController } from './languages/languages.controller';
 import { LanguagesModule } from './languages/languages.module';
+import { VocabularyController } from './vocabulary/vocabulary.controller';
+import { VocabularyModule } from './vocabulary/vocabulary.module';
 
 @Module({
   imports: [
@@ -37,6 +39,8 @@ import { LanguagesModule } from './languages/languages.module';
     UsersModule,
 
     LanguagesModule,
+
+    VocabularyModule,
   ],
   controllers: [AppController, LanguagesController],
   providers: [AppService],

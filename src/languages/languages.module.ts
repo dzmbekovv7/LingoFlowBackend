@@ -1,7 +1,7 @@
 // languages.module.ts
 import { Module } from '@nestjs/common';
 import { MongooseModule } from '@nestjs/mongoose';
-import { Language, LanguageSchema } from '../users/schemas/language.schema';
+import { Language, LanguageSchema } from '../schemas/language.schema';
 import { LanguagesController } from './languages.controller';
 
 @Module({

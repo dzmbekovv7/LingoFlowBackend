@@ -9,6 +9,7 @@ import { LanguagesController } from './languages/languages.controller';
 import { LanguagesModule } from './languages/languages.module';
 import { VocabularyController } from './vocabulary/vocabulary.controller';
 import { VocabularyModule } from './vocabulary/vocabulary.module';
+import { VideosModule } from './videos/videos.module';
 
 @Module({
   imports: [
@@ -41,6 +42,8 @@ import { VocabularyModule } from './vocabulary/vocabulary.module';
     LanguagesModule,
 
     VocabularyModule,
+
+    VideosModule,
   ],
   controllers: [AppController, LanguagesController],
   providers: [AppService],

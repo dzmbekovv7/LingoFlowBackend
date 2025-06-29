@@ -18,6 +18,26 @@ export class UsersController {
   register(@Body() dto: CreateUserDto) {
     return this.usersService.register(dto);
   }
+  @Post('forgotPassword')
+  forgotPassword(@Body() body: { email: string}){
+    return this.usersService.forgotPassword(body.email)
+  }
+@Post('confirmPassword')
+confirmPassword(@Body() body: {
+  email: string;
+  code: string;
+  newPassword: string;
+  confirmPassword: string;
+}) {
+  return this.usersService.confirmPassword(
+    body.email,
+    body.code,
+    body.newPassword,
+    body.confirmPassword
+  );
+}
+
+
 @Patch('profile/:id')
 updateProfile(@Param('id') id: string, @Body() dto: UpdateUserDto) {
   return this.usersService.submitProfileDetails(id, dto);
@@ -41,14 +61,14 @@ async getProfile(@Param('id') id: string) {
     return this.usersService.confirmCode(body.email, body.code);
   }
 
-  @Get()
-  findAll() {
-    return this.usersService.findAll();
-  }
+  // @Get()
+  // findAll() {
+  //   return this.usersService.findAll();
+  // }
 
   @Get(':id')
-  findOne(@Param('id') id: string) {
-    return this.usersService.findOne(id);
+  findById(@Param('id') id: string) {
+    return this.usersService.findById(id);
   }
 
   @Patch(':id')

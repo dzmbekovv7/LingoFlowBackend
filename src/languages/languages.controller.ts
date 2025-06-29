@@ -9,11 +9,14 @@ export class LanguagesController {
     @InjectModel(Language.name) private languageModel: Model<LanguageDocument>,
   ) {}
 
-  @Get('languages')
-  async getLanguages() {
-    const langs = await this.languageModel.find({ isActive: true }).select('name -_id').lean();
-    return langs.map(lang => lang.name);
-  }
+@Get('languages')
+async getLanguages() {
+  return this.languageModel
+    .find({ isActive: true })
+    .select('name flag -_id')
+    .lean();
+}
+
 
   @Get('levels')
   getLevels() {

@@ -31,6 +31,13 @@ export class User {
 
   @Prop({ type: [String], default: [] })
   interests?: string[];
+  
+  @Prop({ 
+    type: String, 
+    enum: ['user', 'admin'], 
+    default: 'user' 
+  })
+  role: string;
 }
 
 

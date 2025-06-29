@@ -1,4 +1,3 @@
-// users.service.ts
 import { Injectable, BadRequestException } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
 import { MailerService } from '@nestjs-modules/mailer';
@@ -9,7 +8,7 @@ import { UpdateUserDto } from './dto/update-user.dto';
 import { JwtService } from '@nestjs/jwt';
 import { PendingUser, PendingUserDocument } from '../schemas/pending-user.schema';
 import { Language, LanguageDocument } from '../schemas/language.schema';
-
+import { ForgotUser, ForgotUserDocument } from 'src/schemas/forgot-user.schema';
 @Injectable()
 export class UsersService {
 constructor(
@@ -17,7 +16,7 @@ constructor(
   @InjectModel(User.name) private userModel: Model<UserDocument>,
   @InjectModel(PendingUser.name) private pendingUserModel: Model<PendingUserDocument>,
   @InjectModel(Language.name) private languageModel: Model<LanguageDocument>,
-
+  @InjectModel(ForgotUser.name) private forgotModel: Model<ForgotUserDocument>,
   private jwtService: JwtService,
 ) {}
  async register(dto: CreateUserDto) {
@@ -54,6 +53,61 @@ constructor(
   return { message: 'Code sent to email' };
 }
 
+async forgotPassword(email: string){
+  const user: UserDocument | null = await this.userModel.findOne({email});
+
+  if(!user){
+    throw new BadRequestException("user not found")
+  }
+
+  const code = Math.floor(100000 + Math.random() * 900000).toString();
+
+  const forgotUser = new this.forgotModel({
+    email,
+    code,
+  })
+  
+  await forgotUser.save()
+
+
+  await this.mailerService.sendMail({
+    to: email,
+    subject: 'Your code for reset password',
+    text: `Your code is ${code}`
+  });
+
+  return { message: 'Code sent to email'};
+}
+
+async confirmPassword(email: string, code: string, newPassword: string, confirmPassword: string) {
+  if (newPassword !== confirmPassword) {
+    throw new BadRequestException('Passwords do not match');
+  }
+
+  const forgotUser = await this.forgotModel.findOne({ email });
+
+  if (!forgotUser || forgotUser.code !== code) {
+    throw new BadRequestException('Invalid code or email');
+  }
+if (forgotUser.expiresAt < new Date()) {
+  throw new BadRequestException('Code expired');
+}
+
+  const user = await this.userModel.findOne({ email });
+
+  if (!user) {
+    throw new BadRequestException('User not found');
+  }
+
+  user.password = newPassword; 
+  await user.save();
+
+  await this.forgotModel.deleteOne({ email });
+
+  return { message: 'Your password has been changed!' };
+}
+
+
 async login(email: string, password: string) {
   const user: UserDocument | null = await this.userModel.findOne({ email });
 
@@ -65,6 +119,10 @@ async login(email: string, password: string) {
     throw new BadRequestException("Incorrect password or email");
   }
 
+  if(!user.isVerified){
+    throw new BadRequestException("You should verify your account!");
+  }
+
   const payload = { 
     sub: user._id,  // Types.ObjectId
     email: user.email,
@@ -74,6 +132,7 @@ async login(email: string, password: string) {
     level: user.level,
     goals: user.goals,
     interests: user.interests,
+    role: user.role
   };
 
   const token = this.jwtService.sign(payload);
@@ -111,7 +170,8 @@ async confirmCode(email: string, code: string) {
     targetLanguage: user.targetLanguage,
     level: user.level,
     goals: user.goals,
-    interests: user.interests
+    interests: user.interests,
+        role: user.role
   };
   const token = this.jwtService.sign(payload);
 
@@ -149,8 +209,17 @@ async submitProfileDetails(userId: string, dto: UpdateUserDto) {
 }
 
 
-  async findAll() {
+async findAll(userId: string) {
+  const user = await this.userModel.findById(userId);
+
+  if (user?.role === 'admin') {
     return this.userModel.find().exec();
+  } else {
+    return null; 
+  }
+}
+  async findById(id: string): Promise<User | null> {
+    return this.userModel.findById(id).exec();
   }
 
   async findOne(id: string) {
